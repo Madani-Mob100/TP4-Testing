@@ -75,7 +75,7 @@ def calcular_subtotal(carrito):
 def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=date.today()):
     descuento = CERO
 
-    if cantidad_prendas > 5:
+    if cantidad_prendas >= 5:
         descuento += _redondear(subtotal * Decimal("0.10"))
 
     if cupon != None:
