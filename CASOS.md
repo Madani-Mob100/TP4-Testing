@@ -272,6 +272,21 @@ los tests siguen estas decisiones:
 
 ## R9 — Total
 
+**Particiones**
+
+| Id | Partición | Tipo |
+|---|---|---|
+| P9.1 | Sin descuento y con costo de envío | Válida: total = subtotal + envío |
+| P9.2 | Con descuento y con costo de envío | Válida: total = subtotal − descuento + envío |
+| P9.3 | Sin descuento y con envío gratis por monto | Válida: total = subtotal |
+| P9.4 | Con descuento y con envío gratis por monto | Válida: total = subtotal − descuento |
+| P9.5 | Envío $ 0 por la zona (`RETIRO`) | Válida: total = subtotal − descuento |
+| P9.6 | Compra con cualquier dato inválido | Inválida: no hay total, se lanza el `CheckoutError` de R1 a R8 |
+
+**Valores límite:** descuento `0.00` frente a descuento mayor a cero; envío
+justo en el umbral (subtotal con descuento 59.999,99 paga envío y 60.000,00
+no), donde el total salta el costo del envío.
+
 | Caso | Entrada | Resultado esperado |
 |---|---|---|
 | C9.1 | 2 buzos M, CABA, sin cupón (ejemplo de la §5) | `{"subtotal": 49999.80, "descuento": 0.00, "envio": 2500.00, "total": 52499.80}` |
@@ -279,6 +294,9 @@ los tests siguen estas decisiones:
 | C9.3 | 2 buzos + 1 remera, CABA, `BIENVENIDA` | `{61999.30, 3000.00, 2500.00, 61499.30}` |
 | C9.4 | 3 buzos, CABA | `{74999.70, 0.00, 0.00, 74999.70}` |
 | C9.5 | 5 remeras, `EGRESADOS2026`, CABA | `{59997.50, 8999.63, 2500.00, 53497.87}` |
+| C9.6 | 3 buzos, `EGRESADOS2026`, CABA | `{74999.70, 11249.96, 0.00, 63749.74}` (P9.4) |
+| C9.7 | 1 buzo, RETIRO, sin cupón | `{24999.90, 0.00, 0.00, 24999.90}` (P9.5) |
+| C9.8 | 1 buzo, zona `"MARTE"` | `ZONA_INVALIDA`, sin total (P9.6) |
 
 ## Orden de validación (§3)
 

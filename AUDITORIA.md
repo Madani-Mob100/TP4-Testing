@@ -34,6 +34,9 @@ Sobrevivientes     : 12
 Puntaje de mutación: 58.6%
 ```
 
+El puntaje corresponde al `checkout.py` original, que es el que auditó esta
+sección. Contra mi `checkout.py` corregido, la misma suite da 61,1 %.
+
 Sobrevivientes: línea 40 (`<`→`<=` y `10`→`11`), 60 (`>`→`>=`), 72 (`<`→`<=`),
 76 (`==`→`!=`), 77 (`<`→`<=`), 82 (`+`→`-`), 96 (`>=`→`>` y
 `60000`→`60001`), 107 (`+`→`-`) y 111 (`+`→`-` y `-`→`+`).
@@ -104,7 +107,7 @@ sobreviviente de `mutar.py` · **demo** = ejecución manual.
 | Id | Línea | Categoría | Regla | Falla | Cómo la encontré | Severidad |
 |---|---|---|---|---|---|---|
 | C1 | 49 | Seguridad | R1 | `item.get("precio", ...)` usa el precio que manda el cliente: cualquiera puede comprar un buzo a $ 1. | lectura · `test_el_precio_que_trae_el_item_se_ignora` | Alta |
-| C2 | 23 | Seguridad / alucinación | R6 | Existe un tercer cupón, `DEBUG100`, con 100 % de descuento hasta 2099. Es una puerta trasera: 5 remeras con `DEBUG100` dan total = solo el envío. | lectura · `test_un_cupon_que_no_es_de_los_dos_existentes_es_invalido[DEBUG100]` | Alta |
+| C2 | 23 | Seguridad | R6 | Existe un tercer cupón, `DEBUG100`, con 100 % de descuento hasta 2099. Es una puerta trasera: 5 remeras con `DEBUG100` dan total = solo el envío. | lectura · `test_un_cupon_que_no_es_de_los_dos_existentes_es_invalido[DEBUG100]` | Alta |
 | C3 | 61, 74 | Lógica y límites | R6 | Suma el descuento por cantidad y el del cupón en vez de aplicar el mayor (5 remeras + `EGRESADOS2026` descontaba 25 %). | lectura · `test_con_cinco_prendas_y_egresados2026_se_aplica_solo_el_quince_por_ciento` | Alta |
 | C4 | 57–84 | Lógica y límites | R6 | No limita el descuento al subtotal: con 6 prendas y `DEBUG100` el descuento es 110 % y el total queda negativo. | lectura | Alta |
 | C5 | 13–15, 21, 45, 52, 61, 74 | Numéricos | R7 | Todos los importes son `float`: 3 buzos dan `74999.70000000001`. | lectura · `test_el_subtotal_es_un_decimal_exacto_sin_error_de_float` | Alta |
@@ -134,7 +137,7 @@ sobreviviente de `mutar.py` · **demo** = ejecución manual.
 |---|---|---|---|---|---|---|
 | P1 | 107 | Seguridad | R10 | Inyección SQL: el email se interpola con un f-string. `pedidos_de(con, "' OR '1'='1")` devuelve los pedidos de **todos** los clientes. | lectura · `test_un_email_con_sql_no_altera_la_consulta_de_pedidos_de` | Alta |
 | P2 | 39–50 | Efectos laterales | R10 | Inserta el pedido y hace `commit` **antes** de llamar a `calcular_total`. Si checkout lanza error, queda un pedido huérfano con montos en 0. | lectura · `test_si_checkout_falla_el_error_se_propaga_y_no_queda_nada_guardado` | Alta |
-| P3 | 52–71 | Manejo de errores (transacción) | R10 | Falta el `commit` final: el UPDATE de montos y los ítems solo existen en la conexión que guardó. Otra conexión ve el pedido con total 0 y sin ítems, y al cerrar la conexión se pierden. | test · `test_otra_conexion_ve_el_pedido_completo_con_todos_sus_items` | Alta |
+| P3 | 52–71 | Manejo de errores | R10 | Falta el `commit` final: el UPDATE de montos y los ítems solo existen en la conexión que guardó. Otra conexión ve el pedido con total 0 y sin ítems, y al cerrar la conexión se pierden. | test · `test_otra_conexion_ve_el_pedido_completo_con_todos_sus_items` | Alta |
 | P4 | 12–15, 23, 55–58, 68, 88–97 | Numéricos | R10 | Montos en columnas `REAL` con `float()` y reconstruidos con `Decimal(float)`: `1799.93` vuelve como `1799.930000000000063664629124…`. | lectura · `test_los_montos_guardados_son_decimal_e_identicos_a_los_de_calcular_total` | Alta |
 | P5 | 64 | Seguridad | R10 | `precio_unitario` toma el `precio` que manda el cliente. | lectura | Alta |
 | P6 | 107 | Strings | R10 | Un email legítimo con apóstrofe (`o'brien@mail.com`) rompe la consulta con `sqlite3.OperationalError`. | lectura · demo (`pedidos_de(con, "o'brien@mail.com")`) | Media |
@@ -146,8 +149,8 @@ sobreviviente de `mutar.py` · **demo** = ejecución manual.
 |---|---|---|---|---|---|---|
 | A1 | 41 | Tipos | R11, R6 | La `fecha` llega como texto (`"2026-11-30"`) y se pasa sin convertir a `date`. Con `EGRESADOS2026` la comparación `str > date` lanza `TypeError` → 500. **Es la falla del paso de información entre `api.py` y `pedidos.py`/`checkout.py`.** | lectura · demo (POST con `cupon: "EGRESADOS2026"` y `fecha: "2026-12-01"` → 500) | Alta |
 | A2 | 53–54 | Manejo de errores | R11 | `except Exception` responde **500** a todo: los `CheckoutError` (deberían ser 422), el JSON inválido y los datos incompletos (400). "Un error nunca puede devolver 500." | test · `test_un_error_de_negocio_devuelve_422_con_el_codigo_de_checkout`, `test_si_falta_el_email_devuelve_400_datos_incompletos` | Alta |
-| A3 | 18 | Numéricos / tipos | R11 | `json.dumps(..., default=float)` manda los montos como número JSON (`0.0`, `24999.9`) en vez de texto (`"24999.90"`). | test · `test_crear_un_pedido_devuelve_201_con_los_montos_como_texto` | Alta |
-| A4 | 34–44 | Manejo de errores (transacción) | R10, R11 | Consecuencia de P3 en la API: `con.close()` sin `commit` hace rollback. El POST responde bien, pero un GET posterior muestra el pedido con total 0 y sin ítems. | test · `test_un_pedido_creado_se_consulta_completo_con_sus_items` | Alta |
+| A3 | 18 | Tipos | R11 | `json.dumps(..., default=float)` manda los montos como número JSON (`0.0`, `24999.9`) en vez de texto (`"24999.90"`). | test · `test_crear_un_pedido_devuelve_201_con_los_montos_como_texto` | Alta |
+| A4 | 34–44 | Manejo de errores | R10, R11 | Consecuencia de P3 en la API: `con.close()` sin `commit` hace rollback. El POST responde bien, pero un GET posterior muestra el pedido con total 0 y sin ítems. | test · `test_un_pedido_creado_se_consulta_completo_con_sus_items` | Alta |
 | A5 | 41 | Manejo de errores | R11 | No valida el formato de la fecha: `"30/11/2026"`, `"2026-13-01"` o `20261130` responden **201** en vez de 400 `FECHA_INVALIDA`. | test · `test_una_fecha_que_no_es_aaaa_mm_dd_devuelve_400` | Media |
 | A6 | 37–39 | Tipos | R11 | No valida presencia ni tipo de `email`, `zona` y `carrito` (ni que el cuerpo sea un objeto): `KeyError`/`AttributeError` → 500. | test · `test_si_falta_el_email_devuelve_400_datos_incompletos` | Media |
 | A7 | 64–66 | Lógica y límites | R11 | Un pedido inexistente responde `200 null` en vez de 404 `PEDIDO_INEXISTENTE`. | test · `test_un_pedido_inexistente_devuelve_404` | Media |
@@ -162,7 +165,7 @@ sobreviviente de `mutar.py` · **demo** = ejecución manual.
 | 1 | P1 | pedidos.py:107 | Seguridad | R10 | Alta |
 | 2 | C1 | checkout.py:49 | Seguridad | R1 | Alta |
 | 3 | P5 | pedidos.py:64 | Seguridad | R10 | Alta |
-| 4 | C2 | checkout.py:23 | Seguridad / alucinación | R6 | Alta |
+| 4 | C2 | checkout.py:23 | Seguridad | R6 | Alta |
 | 5 | P3 | pedidos.py:52–71 | Manejo de errores | R10 | Alta |
 | 6 | A4 | api.py:34–44 | Manejo de errores | R10, R11 | Alta |
 | 7 | P2 | pedidos.py:39–50 | Efectos laterales | R10 | Alta |
@@ -171,7 +174,7 @@ sobreviviente de `mutar.py` · **demo** = ejecución manual.
 | 10 | C5 | checkout.py:13–74 | Numéricos | R7 | Alta |
 | 11 | C6 | checkout.py:54, 84 | Numéricos | R7 | Alta |
 | 12 | P4 | pedidos.py:12–97 | Numéricos | R10 | Alta |
-| 13 | A3 | api.py:18 | Numéricos / tipos | R11 | Alta |
+| 13 | A3 | api.py:18 | Tipos | R11 | Alta |
 | 14 | C7 | checkout.py:50–51 | Manejo de errores | R1 | Alta |
 | 15 | C8 | checkout.py:57, 102 | Fechas | R6 | Alta |
 | 16 | C9 | checkout.py:57, 72 | Tipos | R6 | Alta |
