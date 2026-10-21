@@ -323,3 +323,25 @@ def test_el_envio_cuesta_lo_que_dice_la_tabla_de_zonas(zona, costo):
 
     assert isinstance(envio, Decimal)
     assert envio == costo
+
+
+@pytest.mark.parametrize("subtotal_con_descuento, envio_esperado", [
+    (Decimal("59999.99"), Decimal("2500.00")),
+    (Decimal("60000.00"), Decimal("0.00")),
+    (Decimal("60000.01"), Decimal("0.00")),
+])
+def test_el_envio_es_gratis_desde_sesenta_mil(subtotal_con_descuento, envio_esperado):
+    assert calcular_envio(subtotal_con_descuento, "CABA") == envio_esperado
+
+
+def test_el_envio_gratis_se_decide_con_el_subtotal_ya_descontado():
+    carrito = [item("buzo", "M", 2), item("remera", "S", 1)]
+
+    resultado = calcular_total(carrito, "CABA", "BIENVENIDA", HOY_VIGENTE)
+
+    assert resultado == {
+        "subtotal": Decimal("61999.30"),
+        "descuento": Decimal("3000.00"),
+        "envio": Decimal("2500.00"),
+        "total": Decimal("61499.30"),
+    }
