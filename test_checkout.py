@@ -79,3 +79,28 @@ def test_un_item_sin_talle_es_invalido():
     sin_talle = {"producto": "buzo", "cantidad": 1}
 
     assert resultado_de_validar(sin_talle) == "TALLE_INVALIDO"
+
+
+@pytest.mark.parametrize("producto", ["zapatilla", "Buzo", " buzo", "buzos", "", None, ["buzo"]])
+def test_un_producto_fuera_del_catalogo_es_inexistente(producto):
+    assert resultado_de_validar(item(producto=producto)) == "PRODUCTO_INEXISTENTE"
+
+
+def test_un_item_sin_producto_es_inexistente():
+    sin_producto = {"talle": "M", "cantidad": 1}
+
+    assert resultado_de_validar(sin_producto) == "PRODUCTO_INEXISTENTE"
+
+
+def test_el_producto_se_valida_antes_que_el_talle_y_la_cantidad():
+    assert resultado_de_validar(item("zapatilla", "XXXL", 0)) == "PRODUCTO_INEXISTENTE"
+
+
+def test_el_talle_se_valida_antes_que_la_cantidad():
+    assert resultado_de_validar(item("buzo", "XXXL", 0)) == "TALLE_INVALIDO"
+
+
+def test_calcular_total_informa_el_producto_inexistente_en_vez_de_ignorarlo():
+    carrito = [item("buzo"), item("zapatilla")]
+
+    assert codigo_de_error(calcular_total, carrito, "CABA") == "PRODUCTO_INEXISTENTE"
