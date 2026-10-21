@@ -116,7 +116,7 @@ def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=None):
     return min(max(por_cantidad, por_cupon), subtotal)
 
 
-def calcular_envio(subtotal_con_descuento, zona):
+def calcular_envio(subtotal, zona):
     zona_normalizada = _normalizar(zona)
 
     if zona_normalizada not in ENVIOS:
@@ -125,7 +125,7 @@ def calcular_envio(subtotal_con_descuento, zona):
             f"Zona inválida: {zona!r}. Opciones: {', '.join(ENVIOS)}",
         )
 
-    if subtotal_con_descuento >= MINIMO_ENVIO_GRATIS:
+    if subtotal >= MINIMO_ENVIO_GRATIS:
         return CERO
 
     return ENVIOS[zona_normalizada]
