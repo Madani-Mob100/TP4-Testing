@@ -104,3 +104,39 @@ def test_calcular_total_informa_el_producto_inexistente_en_vez_de_ignorarlo():
     carrito = [item("buzo"), item("zapatilla")]
 
     assert codigo_de_error(calcular_total, carrito, "CABA") == "PRODUCTO_INEXISTENTE"
+
+
+def test_el_subtotal_es_un_decimal_exacto_sin_error_de_float():
+    carrito = [item("buzo", "M", 3)]
+
+    subtotal = calcular_subtotal(carrito)
+
+    assert isinstance(subtotal, Decimal)
+    assert subtotal == Decimal("74999.70")
+
+
+def test_el_descuento_porcentual_redondea_el_medio_centavo_hacia_arriba():
+    descuento = calcular_descuento(Decimal("11999.50"), 1, "EGRESADOS2026", HOY_VIGENTE)
+
+    assert isinstance(descuento, Decimal)
+    assert descuento == Decimal("1799.93")
+
+
+def test_el_descuento_porcentual_redondea_hacia_abajo_por_debajo_del_medio_centavo():
+    descuento = calcular_descuento(Decimal("100.03"), 1, "EGRESADOS2026", HOY_VIGENTE)
+
+    assert descuento == Decimal("15.00")
+
+
+def test_calcular_total_devuelve_el_ejemplo_de_la_especificacion_en_decimal():
+    carrito = [item("buzo", "M", 2)]
+
+    resultado = calcular_total(carrito, "CABA", None, HOY_VIGENTE)
+
+    assert resultado == {
+        "subtotal": Decimal("49999.80"),
+        "descuento": Decimal("0.00"),
+        "envio": Decimal("2500.00"),
+        "total": Decimal("52499.80"),
+    }
+    assert all(isinstance(importe, Decimal) for importe in resultado.values())
