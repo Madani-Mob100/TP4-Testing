@@ -71,34 +71,35 @@ def calcular_subtotal(carrito):
     return subtotal
 
 
+def _descuento_por_cupon(subtotal, cupon, fecha):
+    if cupon is None:
+        return CERO
+
+    codigo = cupon.strip() if isinstance(cupon, str) else None
+    if codigo not in CUPONES:
+        raise CheckoutError("CUPON_INVALIDO", "El cupón no existe")
+
+    datos = CUPONES[codigo]
+    if datos["tipo"] == "porcentaje":
+        if fecha > datos["vence"]:
+            raise CheckoutError("CUPON_VENCIDO", "El cupón está vencido")
+        return _redondear(subtotal * datos["valor"])
+
+    if subtotal < datos["minimo"]:
+        raise CheckoutError(
+            "CUPON_MINIMO_NO_ALCANZADO",
+            f"El cupón requiere una compra mínima de ${datos['minimo']}",
+        )
+    return datos["valor"]
+
+
 def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=date.today()):
-    descuento = CERO
-
+    por_cantidad = CERO
     if cantidad_prendas >= 5:
-        descuento += _redondear(subtotal * Decimal("0.10"))
+        por_cantidad = _redondear(subtotal * Decimal("0.10"))
 
-    if cupon != None:
-        codigo = cupon.strip() if isinstance(cupon, str) else None
-
-        if codigo not in CUPONES:
-            raise CheckoutError("CUPON_INVALIDO", "El cupón no existe")
-
-        datos = CUPONES[codigo]
-
-        if datos["tipo"] == "porcentaje":
-            if fecha > datos["vence"]:
-                raise CheckoutError("CUPON_VENCIDO", "El cupón está vencido")
-            descuento += _redondear(subtotal * datos["valor"])
-
-        elif datos["tipo"] == "fijo":
-            if subtotal < datos["minimo"]:
-                raise CheckoutError(
-                    "CUPON_MINIMO_NO_ALCANZADO",
-                    f"El cupón requiere una compra mínima de ${datos['minimo']}",
-                )
-            descuento += datos["valor"]
-
-    return descuento
+    por_cupon = _descuento_por_cupon(subtotal, cupon, fecha)
+    return min(max(por_cantidad, por_cupon), subtotal)
 
 
 def calcular_envio(subtotal, zona):
