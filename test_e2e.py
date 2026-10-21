@@ -95,6 +95,16 @@ def test_un_pedido_creado_se_puede_consultar_completo_con_montos_como_texto(url)
     }
 
 
+def test_un_pedido_sin_cupon_queda_guardado_y_se_consulta_con_sus_items(url):
+    _, creado = pedir(url, "POST", RUTA, compra())
+
+    status, pedido = pedir(url, "GET", f"{RUTA}/{creado['id']}")
+
+    assert status == 200
+    assert (pedido["subtotal"], pedido["envio"], pedido["total"]) == ("24999.90", "2500.00", "27499.90")
+    assert pedido["items"] == [{"producto": "buzo", "talle": "M", "cantidad": 1, "precio_unitario": "24999.90"}]
+
+
 def test_un_pedido_inexistente_devuelve_404(url):
     status, cuerpo = pedir(url, "GET", f"{RUTA}/999")
 
