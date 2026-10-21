@@ -140,3 +140,32 @@ def test_calcular_total_devuelve_el_ejemplo_de_la_especificacion_en_decimal():
         "total": Decimal("52499.80"),
     }
     assert all(isinstance(importe, Decimal) for importe in resultado.values())
+
+
+@pytest.mark.parametrize("producto, precio", [
+    ("buzo", Decimal("24999.90")),
+    ("remera", Decimal("11999.50")),
+    ("campera", Decimal("47999.99")),
+])
+def test_el_subtotal_usa_el_precio_del_catalogo(producto, precio):
+    assert calcular_subtotal([item(producto)]) == precio
+
+
+def test_el_precio_que_trae_el_item_se_ignora():
+    carrito = [item("buzo", "M", 2, precio=1)]
+
+    subtotal = calcular_subtotal(carrito)
+
+    assert subtotal == Decimal("49999.80")
+
+
+def test_las_claves_extra_del_item_se_ignoran():
+    carrito = [item("remera", "S", 2, color="rojo", nota="regalo")]
+
+    assert calcular_subtotal(carrito) == Decimal("23999.00")
+
+
+def test_el_subtotal_suma_todos_los_items():
+    carrito = [item("buzo", "M", 1), item("remera", "S", 2), item("campera", "XL", 1)]
+
+    assert calcular_subtotal(carrito) == Decimal("96998.89")
