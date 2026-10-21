@@ -119,7 +119,8 @@ def test_si_checkout_falla_no_queda_ni_el_pedido_ni_sus_items(ruta, con, carrito
 
 def test_un_cupon_vencido_no_deja_ningun_pedido_guardado(ruta, con):
     with pytest.raises(CheckoutError):
-        pedidos.guardar_pedido(con, "ana@mail.com", [item("remera")], "CABA", "EGRESADOS2026", date(2026, 12, 1))
+        pedidos.guardar_pedido(con, "ana@mail.com", [item("remera")], "CABA",
+                               "EGRESADOS2026", date(2026, 12, 1))
 
     assert contar(ruta, "pedidos") == 0
 
@@ -153,7 +154,8 @@ def test_el_pedido_sigue_completo_despues_de_cerrar_la_conexion_que_lo_guardo(ru
 def test_los_datos_se_guardan_normalizados(con):
     carrito = [item("remera", " m ", 1)]
 
-    pedido_id = pedidos.guardar_pedido(con, "  Ana@Mail.COM ", carrito, " caba ", " egresados2026 ", HOY_VIGENTE)
+    pedido_id = pedidos.guardar_pedido(con, "  Ana@Mail.COM ", carrito, " caba ",
+                                       " egresados2026 ", HOY_VIGENTE)
     pedido = pedidos.obtener_pedido(con, pedido_id)
 
     assert (pedido["email"], pedido["zona"], pedido["cupon"], pedido["items"][0]["talle"]) == (

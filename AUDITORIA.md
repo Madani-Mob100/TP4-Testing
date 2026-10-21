@@ -68,8 +68,8 @@ checkout.py      62     14     26      6    73%      (cobertura de ramas)
 5. **Nunca se mira el tipo ni el efecto lateral.** Ningún test verifica que
    el resultado sea `Decimal` ni que el carrito quede igual.
 
-Mi suite (`test_checkout.py`, 119 tests) tiene 100 % de cobertura de ramas y
-**100 % de mutación (34/34)** sobre el código corregido.
+Mi suite (`test_checkout.py`, 122 tests) tiene 100 % de cobertura de ramas y
+**100 % de mutación (36/36)** sobre el código corregido.
 
 ---
 
@@ -123,7 +123,7 @@ sobreviviente de `mutar.py` · **demo** = ejecución manual.
 | C18 | 44–54 | Lógica y límites | R4 | Un carrito vacío devuelve subtotal 0 en vez de `CARRITO_VACIO`. | lectura · `test_un_carrito_sin_items_es_carrito_vacio` | Media |
 | C19 | 63–64 | Strings | R6 | `""` y `"   "` dan `CUPON_INVALIDO` (deberían ser "sin cupón") y no pasa a mayúsculas (`"egresados2026"` es inválido). | ruff E711 · `test_un_cupon_vacio_equivale_a_no_usar_cupon`, `test_egresados2026_no_distingue_mayusculas_ni_espacios` | Media |
 | C20 | 35 | Strings | R2 | No ignora los espacios: `"  M "` es `TALLE_INVALIDO`. | lectura · `test_un_talle_valido_se_acepta_sin_importar_mayusculas_ni_espacios` | Baja |
-| C21 | 35, 88, 64 | Tipos | §1 | Talle, zona o cupón que no son texto (o un ítem que no es dict) lanzan `AttributeError`/`KeyError` en vez de `CheckoutError`. | test · `test_un_talle_que_no_es_de_la_lista_es_invalido[None]`, `test_una_zona_que_no_existe_es_zona_invalida[None]`, `test_un_item_que_no_es_un_diccionario_es_producto_inexistente` | Baja |
+| C21 | 35, 44–46, 64, 88 | Tipos | §1 | Talle, zona o cupón que no son texto, un ítem que no es dict o un carrito que no es lista (`5`) lanzan `AttributeError`/`KeyError`/`TypeError` en vez de `CheckoutError`. | test · `test_un_talle_que_no_es_de_la_lista_es_invalido[None]`, `test_una_zona_que_no_existe_es_zona_invalida[None]`, `test_un_item_que_no_es_un_diccionario_es_producto_inexistente`, `test_un_carrito_que_no_es_una_lista_es_carrito_vacio` | Baja |
 | C22 | 97, 99 | Tipos | R7 | `calcular_envio` devuelve `int` (`0`, `2500`), no `Decimal`. | test · `test_el_envio_cuesta_lo_que_dice_la_tabla_de_zonas` | Baja |
 | C23 | 1 | Code smell | — | `import json` sin usar. | ruff F401 | Baja |
 | C24 | 60, 61, 96 | Code smell | — | Números mágicos (`5`, `0.10`, `60000`, `10`) sueltos en el código. | lectura | Baja |
@@ -193,7 +193,7 @@ sobreviviente de `mutar.py` · **demo** = ejecución manual.
 | 32 | A7 | api.py:64–66 | Lógica y límites | R11 | Media |
 | 33 | A8 | api.py:54, 68 | Manejo de errores | R11 | Media |
 | 34 | C20 | checkout.py:35 | Strings | R2 | Baja |
-| 35 | C21 | checkout.py:35, 64, 88 | Tipos | §1 | Baja |
+| 35 | C21 | checkout.py:35, 44–46, 64, 88 | Tipos | §1 | Baja |
 | 36 | C22 | checkout.py:97, 99 | Tipos | R7 | Baja |
 | 37 | A9 | api.py:54, 68 | Seguridad | — | Baja |
 | 38 | P7 | pedidos.py:64 | Code smell | — | Baja |
@@ -211,7 +211,7 @@ mensajes que no cambian el importe, y problemas de mantenibilidad.
 
 | Suite | Tests | Pasan | Fallan |
 |---|---:|---:|---:|
-| `test_checkout.py` (contra mi `checkout.py` corregido) | 119 | 119 | 0 |
+| `test_checkout.py` (contra mi `checkout.py` corregido) | 122 | 122 | 0 |
 | `test_integracion.py` (contra `pedidos.py` sin corregir) | 22 | 9 | 13 |
 | `test_e2e.py` (contra `api.py` sin corregir) | 38 | 5 | 33 |
 

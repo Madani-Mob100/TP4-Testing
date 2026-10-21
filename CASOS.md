@@ -20,7 +20,7 @@ los tests siguen estas decisiones:
 | D3 | `cantidad = "3"` (texto) | `CANTIDAD_INVALIDA` | "Cualquier otro valor" → error de negocio, nunca `TypeError`. |
 | D4 | Falta una clave del ítem (`producto`, `talle` o `cantidad`) | El error del campo que falta | §1: "Ante cualquier dato inválido … `CheckoutError`. Nunca otro tipo de excepción." |
 | D5 | Producto, talle, zona o cupón que no son texto (`None`, `5`, `[]`) | El código de error del campo | Ídem D4. |
-| D6 | Carrito `None` | `CARRITO_VACIO` | No tiene ítems. |
+| D6 | Carrito `None` o que no es una lista (`5`, `3.5`) | `CARRITO_VACIO` | No tiene ítems. |
 | D7 | Importes | Siempre `Decimal` con dos decimales (`Decimal("2500.00")`, `Decimal("0.00")`) | §6 y §7 muestran `"2500.00"` y `Decimal("2500.00")`. |
 | D8 | Cupón inválido aunque el descuento por cantidad sea mayor | Igual se informa el error del cupón | R6 define el error sin excepciones; §3 valida el cupón antes de la zona. |
 | D9 | Mínimo de `BIENVENIDA` | Se compara contra el subtotal **sin** descuento | R6: "Subtotal de $ 20.000 o más". |
@@ -126,7 +126,7 @@ los tests siguen estas decisiones:
 |---|---|---|
 | P4.1 | Carrito con 1 ítem | Válida |
 | P4.2 | Carrito con varios ítems | Válida |
-| P4.3 | Carrito vacío (`[]`) o `None` | Inválida |
+| P4.3 | Carrito vacío (`[]`), `None` o que no es una lista | Inválida |
 | P4.4 | Cualquier llamada (válida o con error) | El carrito recibido queda idéntico |
 
 **Valores límite:** 0 y 1 ítems.
@@ -137,7 +137,7 @@ los tests siguen estas decisiones:
 |---|---|---|
 | C4.1 | `calcular_total([], "CABA")` | `CARRITO_VACIO` |
 | C4.2 | `calcular_subtotal([])` | `CARRITO_VACIO` |
-| C4.3 | `calcular_total(None, "CABA")` | `CARRITO_VACIO` (D6) |
+| C4.3 | `calcular_total(None, "CABA")` / `calcular_total(5, "CABA")` | `CARRITO_VACIO` (D6) |
 | C4.4 | `[item("buzo","M",1)]` | Subtotal `24999.90` |
 | C4.5 | `[item("buzo","M",1), item("remera","S",2)]` | Subtotal `48998.90` |
 | C4.6 | `carrito = [item("buzo"," m ",2, precio=1)]`; se copia con `deepcopy`; se llama a `calcular_total` | `carrito == copia` (no cambió ni el talle ni el precio) |

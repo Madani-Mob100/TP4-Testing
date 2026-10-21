@@ -102,7 +102,9 @@ def test_un_pedido_sin_cupon_queda_guardado_y_se_consulta_con_sus_items(url):
 
     assert status == 200
     assert (pedido["subtotal"], pedido["envio"], pedido["total"]) == ("24999.90", "2500.00", "27499.90")
-    assert pedido["items"] == [{"producto": "buzo", "talle": "M", "cantidad": 1, "precio_unitario": "24999.90"}]
+    assert pedido["items"] == [
+        {"producto": "buzo", "talle": "M", "cantidad": 1, "precio_unitario": "24999.90"},
+    ]
 
 
 def test_un_pedido_inexistente_devuelve_404(url):
@@ -150,7 +152,8 @@ def test_un_error_tiene_el_formato_de_la_especificacion(url):
 
 # --- Errores de la request: 400 ---------------------------------------------
 
-@pytest.mark.parametrize("crudo", [b"{no es json", b"", "{\"email\": \"ana\"".encode()], ids=["roto", "vacio", "incompleto"])
+@pytest.mark.parametrize("crudo", [b"{no es json", b"", b'{"email": "ana"'],
+                         ids=["roto", "vacio", "incompleto"])
 def test_un_cuerpo_que_no_es_json_devuelve_400(url, crudo):
     status, cuerpo = pedir(url, "POST", RUTA, crudo=crudo)
 
@@ -185,7 +188,9 @@ def test_un_json_que_no_es_un_objeto_devuelve_400(url):
     assert (status, codigo_de_error(cuerpo)) == (400, "DATOS_INCOMPLETOS")
 
 
-@pytest.mark.parametrize("fecha", ["30/11/2026", "2026-13-01", "2026-02-29", "20261130", "2026-1-5", "", 20261130])
+@pytest.mark.parametrize("fecha", [
+    "30/11/2026", "2026-13-01", "2026-02-29", "20261130", "2026-1-5", "", 20261130,
+])
 def test_una_fecha_que_no_es_aaaa_mm_dd_devuelve_400(url, fecha):
     status, cuerpo = pedir(url, "POST", RUTA, compra(fecha=fecha))
 
