@@ -303,3 +303,23 @@ def test_calcular_total_con_fecha_none_usa_el_dia_de_la_llamada(monkeypatch):
     error = codigo_de_error(calcular_total, carrito, "CABA", "EGRESADOS2026", None)
 
     assert error == "CUPON_VENCIDO"
+
+
+@pytest.mark.parametrize("zona", ["Córdoba", "CAPITAL", "", "   ", None, 5])
+def test_una_zona_que_no_existe_es_zona_invalida(zona):
+    assert codigo_de_error(calcular_envio, Decimal("10000.00"), zona) == "ZONA_INVALIDA"
+
+
+@pytest.mark.parametrize("zona, costo", [
+    ("CABA", Decimal("2500.00")),
+    ("GBA", Decimal("4000.00")),
+    ("INTERIOR", Decimal("6500.00")),
+    ("RETIRO", Decimal("0.00")),
+    ("  caba ", Decimal("2500.00")),
+    ("Interior", Decimal("6500.00")),
+])
+def test_el_envio_cuesta_lo_que_dice_la_tabla_de_zonas(zona, costo):
+    envio = calcular_envio(Decimal("10000.00"), zona)
+
+    assert isinstance(envio, Decimal)
+    assert envio == costo
