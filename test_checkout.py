@@ -476,3 +476,8 @@ def test_el_total_resta_el_descuento_y_suma_el_envio():
         "envio": Decimal("4000.00"),
         "total": Decimal("54997.87"),
     }
+
+
+@pytest.mark.parametrize("carrito", [5, 3.5, True], ids=["entero", "decimal", "bool"])
+def test_un_carrito_que_no_es_una_lista_es_carrito_vacio(carrito):
+    assert codigo_de_error(calcular_total, carrito, "CABA") == "CARRITO_VACIO"
