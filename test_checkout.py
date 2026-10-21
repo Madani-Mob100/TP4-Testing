@@ -345,3 +345,8 @@ def test_el_envio_gratis_se_decide_con_el_subtotal_ya_descontado():
         "envio": Decimal("2500.00"),
         "total": Decimal("61499.30"),
     }
+
+
+@pytest.mark.parametrize("un_item", ["buzo", None, ["buzo", "M", 1]], ids=["texto", "none", "lista"])
+def test_un_item_que_no_es_un_diccionario_es_producto_inexistente(un_item):
+    assert codigo_de_error(calcular_total, [un_item], "CABA") == "PRODUCTO_INEXISTENTE"
