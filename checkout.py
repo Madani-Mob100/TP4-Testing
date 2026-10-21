@@ -106,18 +106,18 @@ def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=None):
 
 
 def calcular_envio(subtotal, zona):
-    zona = zona.strip().upper()
+    zona_normalizada = _normalizar(zona)
 
-    if zona not in ENVIOS:
+    if zona_normalizada not in ENVIOS:
         raise CheckoutError(
             "ZONA_INVALIDA",
-            f"Zona inválida. Opciones: {ENVIOS.keys().join(', ')}",
+            f"Zona inválida: {zona!r}. Opciones: {', '.join(ENVIOS)}",
         )
 
     if subtotal >= 60000:
         return CERO
 
-    return ENVIOS[zona]
+    return ENVIOS[zona_normalizada]
 
 
 def calcular_total(carrito, zona, cupon=None, fecha=None):
