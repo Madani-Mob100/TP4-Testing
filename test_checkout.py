@@ -350,3 +350,129 @@ def test_el_envio_gratis_se_decide_con_el_subtotal_ya_descontado():
 @pytest.mark.parametrize("un_item", ["buzo", None, ["buzo", "M", 1]], ids=["texto", "none", "lista"])
 def test_un_item_que_no_es_un_diccionario_es_producto_inexistente(un_item):
     assert codigo_de_error(calcular_total, [un_item], "CABA") == "PRODUCTO_INEXISTENTE"
+
+
+@pytest.mark.parametrize("cantidad, resultado", [
+    (0, "CANTIDAD_INVALIDA"),
+    (1, "VALIDO"),
+    (2, "VALIDO"),
+    (9, "VALIDO"),
+    (11, "CANTIDAD_INVALIDA"),
+    (-1, "CANTIDAD_INVALIDA"),
+])
+def test_los_limites_de_cantidad_son_uno_y_diez(cantidad, resultado):
+    assert resultado_de_validar(item(cantidad=cantidad)) == resultado
+
+
+def test_un_item_sin_cantidad_es_cantidad_invalida():
+    sin_cantidad = {"producto": "buzo", "talle": "M"}
+
+    assert resultado_de_validar(sin_cantidad) == "CANTIDAD_INVALIDA"
+
+
+@pytest.mark.parametrize("subtotal, resultado", [
+    (Decimal("19999.99"), "CUPON_MINIMO_NO_ALCANZADO"),
+    (Decimal("20000.00"), Decimal("3000.00")),
+    (Decimal("20000.01"), Decimal("3000.00")),
+])
+def test_bienvenida_exige_un_subtotal_de_veinte_mil_o_mas(subtotal, resultado):
+    try:
+        obtenido = calcular_descuento(subtotal, 1, "BIENVENIDA", HOY_VIGENTE)
+    except CheckoutError as error:
+        obtenido = error.code
+
+    assert obtenido == resultado
+
+
+def test_bienvenida_con_una_remera_no_alcanza_el_minimo():
+    carrito = [item("remera", "M", 1)]
+
+    error = codigo_de_error(calcular_total, carrito, "CABA", "BIENVENIDA", HOY_VIGENTE)
+
+    assert error == "CUPON_MINIMO_NO_ALCANZADO"
+
+
+def test_egresados2026_vencido_en_calcular_total_es_cupon_vencido():
+    carrito = [item("remera", "M", 1)]
+
+    error = codigo_de_error(calcular_total, carrito, "CABA", "EGRESADOS2026", date(2026, 12, 1))
+
+    assert error == "CUPON_VENCIDO"
+
+
+def test_el_cupon_invalido_se_informa_aunque_el_descuento_por_cantidad_sea_aplicable():
+    carrito = [item("remera", "M", 5)]
+
+    assert codigo_de_error(calcular_total, carrito, "CABA", "PROMO10", HOY_VIGENTE) == "CUPON_INVALIDO"
+
+
+def test_el_primer_item_invalido_es_el_que_se_informa():
+    carrito = [item("buzo", "XXXL", 1), item("zapatilla", "M", 1)]
+
+    assert codigo_de_error(calcular_total, carrito, "CABA") == "TALLE_INVALIDO"
+
+
+def test_un_item_invalido_se_informa_antes_que_el_cupon():
+    carrito = [item("buzo", "M", 0)]
+
+    assert codigo_de_error(calcular_total, carrito, "CABA", "PROMO", HOY_VIGENTE) == "CANTIDAD_INVALIDA"
+
+
+def test_el_cupon_se_informa_antes_que_la_zona():
+    carrito = [item("buzo", "M", 1)]
+
+    assert codigo_de_error(calcular_total, carrito, "MARTE", "PROMO", HOY_VIGENTE) == "CUPON_INVALIDO"
+
+
+def test_calcular_total_con_zona_invalida_es_zona_invalida():
+    carrito = [item("buzo", "M", 1)]
+
+    assert codigo_de_error(calcular_total, carrito, "MARTE", None, HOY_VIGENTE) == "ZONA_INVALIDA"
+
+
+def test_calcular_total_no_modifica_el_carrito_aunque_falle():
+    carrito = [item("buzo", " m ", 1), item("zapatilla", "M", 1)]
+    copia = copy.deepcopy(carrito)
+
+    codigo_de_error(calcular_total, carrito, "CABA")
+
+    assert carrito == copia
+
+
+def test_calcular_total_reproduce_el_ejemplo_de_pedido_con_egresados2026():
+    carrito = [item("remera", "M", 1)]
+
+    resultado = calcular_total(carrito, "CABA", "EGRESADOS2026", HOY_VIGENTE)
+
+    assert resultado == {
+        "subtotal": Decimal("11999.50"),
+        "descuento": Decimal("1799.93"),
+        "envio": Decimal("2500.00"),
+        "total": Decimal("12699.57"),
+    }
+
+
+def test_una_compra_de_sesenta_mil_o_mas_sin_descuento_no_paga_envio():
+    carrito = [item("buzo", "M", 3)]
+
+    resultado = calcular_total(carrito, "INTERIOR", None, HOY_VIGENTE)
+
+    assert resultado == {
+        "subtotal": Decimal("74999.70"),
+        "descuento": Decimal("0.00"),
+        "envio": Decimal("0.00"),
+        "total": Decimal("74999.70"),
+    }
+
+
+def test_el_total_resta_el_descuento_y_suma_el_envio():
+    carrito = [item("remera", "M", 5)]
+
+    resultado = calcular_total(carrito, "GBA", "EGRESADOS2026", HOY_VIGENTE)
+
+    assert resultado == {
+        "subtotal": Decimal("59997.50"),
+        "descuento": Decimal("8999.63"),
+        "envio": Decimal("4000.00"),
+        "total": Decimal("54997.87"),
+    }
