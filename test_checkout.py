@@ -227,3 +227,25 @@ def test_un_cupon_que_no_es_de_los_dos_existentes_es_invalido(cupon):
     error = codigo_de_error(calcular_descuento, Decimal("50000.00"), 1, cupon, HOY_VIGENTE)
 
     assert error == "CUPON_INVALIDO"
+
+
+def test_con_cinco_prendas_y_egresados2026_se_aplica_solo_el_quince_por_ciento():
+    carrito = [item("remera", "M", 5)]
+
+    resultado = calcular_total(carrito, "CABA", "EGRESADOS2026", HOY_VIGENTE)
+
+    assert resultado["descuento"] == Decimal("8999.63")
+
+
+def test_con_cinco_prendas_y_bienvenida_se_aplica_solo_el_diez_por_ciento():
+    carrito = [item("remera", "M", 5)]
+
+    resultado = calcular_total(carrito, "CABA", "BIENVENIDA", HOY_VIGENTE)
+
+    assert resultado["descuento"] == Decimal("5999.75")
+
+
+def test_bienvenida_mayor_que_el_descuento_por_cantidad_se_aplica_solo():
+    descuento = calcular_descuento(Decimal("25000.00"), 5, "BIENVENIDA", HOY_VIGENTE)
+
+    assert descuento == Decimal("3000.00")
