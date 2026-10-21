@@ -71,7 +71,7 @@ def validar_item(item):
 
 
 def calcular_subtotal(carrito):
-    if not carrito:
+    if not isinstance(carrito, list) or not carrito:
         raise CheckoutError("CARRITO_VACIO", "El carrito está vacío")
 
     subtotal = CERO
