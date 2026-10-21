@@ -72,10 +72,10 @@ def calcular_subtotal(carrito):
 
 
 def _descuento_por_cupon(subtotal, cupon, fecha):
-    if cupon is None:
+    codigo = "" if cupon is None else _normalizar(cupon)
+    if codigo == "":
         return CERO
 
-    codigo = cupon.strip() if isinstance(cupon, str) else None
     if codigo not in CUPONES:
         raise CheckoutError("CUPON_INVALIDO", "El cupón no existe")
 
