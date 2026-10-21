@@ -169,3 +169,16 @@ def test_el_subtotal_suma_todos_los_items():
     carrito = [item("buzo", "M", 1), item("remera", "S", 2), item("campera", "XL", 1)]
 
     assert calcular_subtotal(carrito) == Decimal("96998.89")
+
+
+@pytest.mark.parametrize("carrito", [[], None], ids=["lista_vacia", "none"])
+def test_un_carrito_sin_items_es_carrito_vacio(carrito):
+    assert codigo_de_error(calcular_total, carrito, "CABA") == "CARRITO_VACIO"
+
+
+def test_calcular_subtotal_de_un_carrito_vacio_es_carrito_vacio():
+    assert codigo_de_error(calcular_subtotal, []) == "CARRITO_VACIO"
+
+
+def test_el_carrito_vacio_se_informa_antes_que_el_cupon_y_la_zona():
+    assert codigo_de_error(calcular_total, [], "MARTE", "PROMO") == "CARRITO_VACIO"
