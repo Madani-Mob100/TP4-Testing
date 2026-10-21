@@ -220,3 +220,10 @@ def test_egresados2026_despues_del_30_de_noviembre_esta_vencido():
     error = codigo_de_error(calcular_descuento, Decimal("11999.50"), 1, "EGRESADOS2026", date(2026, 12, 1))
 
     assert error == "CUPON_VENCIDO"
+
+
+@pytest.mark.parametrize("cupon", ["DEBUG100", "PROMO10", "EGRESADOS2025", 123])
+def test_un_cupon_que_no_es_de_los_dos_existentes_es_invalido(cupon):
+    error = codigo_de_error(calcular_descuento, Decimal("50000.00"), 1, cupon, HOY_VIGENTE)
+
+    assert error == "CUPON_INVALIDO"
