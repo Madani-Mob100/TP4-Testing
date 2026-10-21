@@ -21,7 +21,6 @@ TALLES = ["XS", "S", "M", "L", "XL", "XXL"]
 CUPONES = {
     "EGRESADOS2026": {"tipo": "porcentaje", "valor": Decimal("0.15"), "vence": date(2026, 11, 30)},
     "BIENVENIDA": {"tipo": "fijo", "valor": Decimal("3000.00"), "minimo": Decimal("20000.00")},
-    "DEBUG100": {"tipo": "porcentaje", "valor": Decimal("1.00"), "vence": date(2099, 12, 31)},
 }
 
 ENVIOS = {
@@ -79,7 +78,7 @@ def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=date.today(
         descuento += _redondear(subtotal * Decimal("0.10"))
 
     if cupon != None:
-        codigo = cupon.strip()
+        codigo = cupon.strip() if isinstance(cupon, str) else None
 
         if codigo not in CUPONES:
             raise CheckoutError("CUPON_INVALIDO", "El cupón no existe")
