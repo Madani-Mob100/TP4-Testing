@@ -4,6 +4,7 @@ from decimal import Decimal
 
 import pytest
 
+import checkout
 from checkout import (
     CheckoutError,
     calcular_descuento,
@@ -14,6 +15,15 @@ from checkout import (
 )
 
 HOY_VIGENTE = date(2026, 10, 1)
+
+
+def fijar_hoy(monkeypatch, dia):
+    class FechaFija(date):
+        @classmethod
+        def today(cls):
+            return dia
+
+    monkeypatch.setattr(checkout, "date", FechaFija)
 
 
 def item(producto="buzo", talle="M", cantidad=1, **extra):
@@ -268,3 +278,28 @@ def test_egresados2026_no_distingue_mayusculas_ni_espacios(cupon):
 @pytest.mark.parametrize("cupon", ["bienvenida", "  BIENVENIDA  "])
 def test_bienvenida_no_distingue_mayusculas_ni_espacios(cupon):
     assert calcular_descuento(Decimal("24999.90"), 1, cupon, HOY_VIGENTE) == Decimal("3000.00")
+
+
+def test_sin_fecha_egresados2026_es_valido_si_la_llamada_es_el_30_de_noviembre(monkeypatch):
+    fijar_hoy(monkeypatch, date(2026, 11, 30))
+
+    descuento = calcular_descuento(Decimal("11999.50"), 1, "EGRESADOS2026")
+
+    assert descuento == Decimal("1799.93")
+
+
+def test_sin_fecha_egresados2026_vence_si_la_llamada_es_el_1_de_diciembre(monkeypatch):
+    fijar_hoy(monkeypatch, date(2026, 12, 1))
+
+    error = codigo_de_error(calcular_descuento, Decimal("11999.50"), 1, "EGRESADOS2026")
+
+    assert error == "CUPON_VENCIDO"
+
+
+def test_calcular_total_con_fecha_none_usa_el_dia_de_la_llamada(monkeypatch):
+    fijar_hoy(monkeypatch, date(2026, 12, 1))
+    carrito = [item("remera", "M", 1)]
+
+    error = codigo_de_error(calcular_total, carrito, "CABA", "EGRESADOS2026", None)
+
+    assert error == "CUPON_VENCIDO"
