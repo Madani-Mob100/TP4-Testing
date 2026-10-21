@@ -93,7 +93,10 @@ def _descuento_por_cupon(subtotal, cupon, fecha):
     return datos["valor"]
 
 
-def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=date.today()):
+def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=None):
+    if fecha is None:
+        fecha = date.today()
+
     por_cantidad = CERO
     if cantidad_prendas >= 5:
         por_cantidad = _redondear(subtotal * Decimal("0.10"))
@@ -117,7 +120,7 @@ def calcular_envio(subtotal, zona):
     return ENVIOS[zona]
 
 
-def calcular_total(carrito, zona, cupon=None, fecha=date.today()):
+def calcular_total(carrito, zona, cupon=None, fecha=None):
     subtotal = calcular_subtotal(carrito)
 
     prendas = 0
