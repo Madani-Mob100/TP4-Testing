@@ -182,3 +182,28 @@ def test_calcular_subtotal_de_un_carrito_vacio_es_carrito_vacio():
 
 def test_el_carrito_vacio_se_informa_antes_que_el_cupon_y_la_zona():
     assert codigo_de_error(calcular_total, [], "MARTE", "PROMO") == "CARRITO_VACIO"
+
+
+@pytest.mark.parametrize("prendas, descuento_esperado", [
+    (4, Decimal("0.00")),
+    (5, Decimal("100.00")),
+    (6, Decimal("100.00")),
+])
+def test_el_descuento_por_cantidad_es_del_diez_por_ciento_desde_cinco_prendas(prendas, descuento_esperado):
+    assert calcular_descuento(Decimal("1000.00"), prendas, None, HOY_VIGENTE) == descuento_esperado
+
+
+def test_cinco_remeras_tienen_diez_por_ciento_de_descuento():
+    carrito = [item("remera", "M", 5)]
+
+    resultado = calcular_total(carrito, "CABA", None, HOY_VIGENTE)
+
+    assert resultado["descuento"] == Decimal("5999.75")
+
+
+def test_las_prendas_se_suman_entre_todos_los_items_del_carrito():
+    carrito = [item("buzo", "M", 2), item("remera", "S", 3)]
+
+    resultado = calcular_total(carrito, "CABA", None, HOY_VIGENTE)
+
+    assert resultado["descuento"] == Decimal("8599.83")
