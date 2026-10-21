@@ -1,5 +1,6 @@
 import json
 from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
 
 
 class CheckoutError(Exception):
@@ -10,25 +11,32 @@ class CheckoutError(Exception):
 
 
 CATALOGO = {
-    "buzo": 24999.90,
-    "remera": 11999.50,
-    "campera": 47999.99,
+    "buzo": Decimal("24999.90"),
+    "remera": Decimal("11999.50"),
+    "campera": Decimal("47999.99"),
 }
 
 TALLES = ["XS", "S", "M", "L", "XL", "XXL"]
 
 CUPONES = {
-    "EGRESADOS2026": {"tipo": "porcentaje", "valor": 0.15, "vence": date(2026, 11, 30)},
-    "BIENVENIDA": {"tipo": "fijo", "valor": 3000, "minimo": 20000},
-    "DEBUG100": {"tipo": "porcentaje", "valor": 1.0, "vence": date(2099, 12, 31)},
+    "EGRESADOS2026": {"tipo": "porcentaje", "valor": Decimal("0.15"), "vence": date(2026, 11, 30)},
+    "BIENVENIDA": {"tipo": "fijo", "valor": Decimal("3000.00"), "minimo": Decimal("20000.00")},
+    "DEBUG100": {"tipo": "porcentaje", "valor": Decimal("1.00"), "vence": date(2099, 12, 31)},
 }
 
 ENVIOS = {
-    "CABA": 2500,
-    "GBA": 4000,
-    "INTERIOR": 6500,
-    "RETIRO": 0,
+    "CABA": Decimal("2500.00"),
+    "GBA": Decimal("4000.00"),
+    "INTERIOR": Decimal("6500.00"),
+    "RETIRO": Decimal("0.00"),
 }
+
+CERO = Decimal("0.00")
+CENTAVO = Decimal("0.01")
+
+
+def _redondear(importe):
+    return importe.quantize(CENTAVO, rounding=ROUND_HALF_UP)
 
 
 def _normalizar(texto):
@@ -53,7 +61,7 @@ def validar_item(item):
 
 
 def calcular_subtotal(carrito):
-    subtotal = 0
+    subtotal = CERO
     for item in carrito:
         validar_item(item)
         try:
@@ -62,14 +70,14 @@ def calcular_subtotal(carrito):
             continue
         subtotal += precio * item["cantidad"]
 
-    return round(subtotal, 2)
+    return subtotal
 
 
 def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=date.today()):
-    descuento = 0
+    descuento = CERO
 
     if cantidad_prendas > 5:
-        descuento += subtotal * 0.10
+        descuento += _redondear(subtotal * Decimal("0.10"))
 
     if cupon != None:
         codigo = cupon.strip()
@@ -82,7 +90,7 @@ def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=date.today(
         if datos["tipo"] == "porcentaje":
             if not fecha < datos["vence"]:
                 raise CheckoutError("CUPON_VENCIDO", "El cupón está vencido")
-            descuento += subtotal * datos["valor"]
+            descuento += _redondear(subtotal * datos["valor"])
 
         elif datos["tipo"] == "fijo":
             if subtotal < datos["minimo"]:
@@ -92,7 +100,7 @@ def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=date.today(
                 )
             descuento += datos["valor"]
 
-    return round(descuento, 2)
+    return descuento
 
 
 def calcular_envio(subtotal, zona):
@@ -105,7 +113,7 @@ def calcular_envio(subtotal, zona):
         )
 
     if subtotal >= 60000:
-        return 0
+        return CERO
 
     return ENVIOS[zona]
 
@@ -125,6 +133,6 @@ def calcular_total(carrito, zona, cupon=None, fecha=date.today()):
         "subtotal": subtotal,
         "descuento": descuento,
         "envio": envio,
-        "total": round(total, 2),
+        "total": total,
     }
     return resultado
