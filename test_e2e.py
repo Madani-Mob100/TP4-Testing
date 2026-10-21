@@ -201,6 +201,6 @@ def test_una_fecha_que_no_es_aaaa_mm_dd_devuelve_400(url, fecha):
     ("GET", "/api/v1/pedidos"),
 ])
 def test_otras_rutas_inexistentes_devuelven_404(url, metodo, ruta):
-    status, cuerpo = pedir(url, metodo, ruta, compra())
+    status, cuerpo = pedir(url, metodo, ruta)
 
     assert (status, codigo_de_error(cuerpo)) == (404, "RUTA_INEXISTENTE")
