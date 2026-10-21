@@ -38,6 +38,10 @@ def _normalizar(texto):
 
 
 def validar_item(item):
+    producto = item.get("producto")
+    if not isinstance(producto, str) or producto not in CATALOGO:
+        raise CheckoutError("PRODUCTO_INEXISTENTE", f"Producto inexistente: {producto!r}")
+
     talle = _normalizar(item.get("talle"))
 
     if talle not in TALLES:
