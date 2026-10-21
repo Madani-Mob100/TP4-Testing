@@ -249,3 +249,22 @@ def test_bienvenida_mayor_que_el_descuento_por_cantidad_se_aplica_solo():
     descuento = calcular_descuento(Decimal("25000.00"), 5, "BIENVENIDA", HOY_VIGENTE)
 
     assert descuento == Decimal("3000.00")
+
+
+@pytest.mark.parametrize("cupon", [None, "", "   "], ids=["none", "vacio", "espacios"])
+def test_un_cupon_vacio_equivale_a_no_usar_cupon(cupon):
+    carrito = [item("remera", "M", 1)]
+
+    resultado = calcular_total(carrito, "CABA", cupon, HOY_VIGENTE)
+
+    assert resultado["descuento"] == Decimal("0.00")
+
+
+@pytest.mark.parametrize("cupon", ["egresados2026", " EGRESADOS2026 ", "Egresados2026"])
+def test_egresados2026_no_distingue_mayusculas_ni_espacios(cupon):
+    assert calcular_descuento(Decimal("11999.50"), 1, cupon, HOY_VIGENTE) == Decimal("1799.93")
+
+
+@pytest.mark.parametrize("cupon", ["bienvenida", "  BIENVENIDA  "])
+def test_bienvenida_no_distingue_mayusculas_ni_espacios(cupon):
+    assert calcular_descuento(Decimal("24999.90"), 1, cupon, HOY_VIGENTE) == Decimal("3000.00")
