@@ -1,4 +1,3 @@
-import json
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -30,6 +29,12 @@ ENVIOS = {
     "RETIRO": Decimal("0.00"),
 }
 
+CANTIDAD_MINIMA = 1
+CANTIDAD_MAXIMA = 10
+PRENDAS_PARA_DESCUENTO = 5
+DESCUENTO_POR_CANTIDAD = Decimal("0.10")
+MINIMO_ENVIO_GRATIS = Decimal("60000.00")
+
 CERO = Decimal("0.00")
 CENTAVO = Decimal("0.01")
 
@@ -58,8 +63,11 @@ def validar_item(item):
         raise CheckoutError("TALLE_INVALIDO", f"Talle inválido: {item.get('talle')!r}")
 
     cantidad = item.get("cantidad")
-    if type(cantidad) is not int or not 1 <= cantidad <= 10:
-        raise CheckoutError("CANTIDAD_INVALIDA", "La cantidad debe estar entre 1 y 10")
+    if type(cantidad) is not int or not CANTIDAD_MINIMA <= cantidad <= CANTIDAD_MAXIMA:
+        raise CheckoutError(
+            "CANTIDAD_INVALIDA",
+            f"La cantidad debe ser un entero entre {CANTIDAD_MINIMA} y {CANTIDAD_MAXIMA}: {cantidad!r}",
+        )
 
 
 def calcular_subtotal(carrito):
@@ -101,14 +109,14 @@ def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=None):
         fecha = date.today()
 
     por_cantidad = CERO
-    if cantidad_prendas >= 5:
-        por_cantidad = _redondear(subtotal * Decimal("0.10"))
+    if cantidad_prendas >= PRENDAS_PARA_DESCUENTO:
+        por_cantidad = _redondear(subtotal * DESCUENTO_POR_CANTIDAD)
 
     por_cupon = _descuento_por_cupon(subtotal, cupon, fecha)
     return min(max(por_cantidad, por_cupon), subtotal)
 
 
-def calcular_envio(subtotal, zona):
+def calcular_envio(subtotal_con_descuento, zona):
     zona_normalizada = _normalizar(zona)
 
     if zona_normalizada not in ENVIOS:
@@ -117,7 +125,7 @@ def calcular_envio(subtotal, zona):
             f"Zona inválida: {zona!r}. Opciones: {', '.join(ENVIOS)}",
         )
 
-    if subtotal >= 60000:
+    if subtotal_con_descuento >= MINIMO_ENVIO_GRATIS:
         return CERO
 
     return ENVIOS[zona_normalizada]
@@ -125,19 +133,14 @@ def calcular_envio(subtotal, zona):
 
 def calcular_total(carrito, zona, cupon=None, fecha=None):
     subtotal = calcular_subtotal(carrito)
-
-    prendas = 0
-    for item in carrito:
-        prendas = prendas + item["cantidad"]
+    prendas = sum(item["cantidad"] for item in carrito)
 
     descuento = calcular_descuento(subtotal, prendas, cupon, fecha)
     envio = calcular_envio(subtotal - descuento, zona)
-    total = subtotal - descuento + envio
 
-    resultado = {
+    return {
         "subtotal": subtotal,
         "descuento": descuento,
         "envio": envio,
-        "total": total,
+        "total": subtotal - descuento + envio,
     }
-    return resultado
