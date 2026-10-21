@@ -207,3 +207,16 @@ def test_las_prendas_se_suman_entre_todos_los_items_del_carrito():
     resultado = calcular_total(carrito, "CABA", None, HOY_VIGENTE)
 
     assert resultado["descuento"] == Decimal("8599.83")
+
+
+@pytest.mark.parametrize("fecha", [date(2026, 11, 29), date(2026, 11, 30)], ids=["29_nov", "30_nov"])
+def test_egresados2026_es_valido_hasta_el_30_de_noviembre_inclusive(fecha):
+    descuento = calcular_descuento(Decimal("11999.50"), 1, "EGRESADOS2026", fecha)
+
+    assert descuento == Decimal("1799.93")
+
+
+def test_egresados2026_despues_del_30_de_noviembre_esta_vencido():
+    error = codigo_de_error(calcular_descuento, Decimal("11999.50"), 1, "EGRESADOS2026", date(2026, 12, 1))
+
+    assert error == "CUPON_VENCIDO"
