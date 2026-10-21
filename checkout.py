@@ -31,11 +31,17 @@ ENVIOS = {
 }
 
 
+def _normalizar(texto):
+    if not isinstance(texto, str):
+        return None
+    return texto.strip().upper()
+
+
 def validar_item(item):
-    talle = item["talle"].upper()
+    talle = _normalizar(item.get("talle"))
 
     if talle not in TALLES:
-        raise CheckoutError("TALLE_INVALIDO", f"Talle inválido: {item['talle']!r}")
+        raise CheckoutError("TALLE_INVALIDO", f"Talle inválido: {item.get('talle')!r}")
 
     cantidad = item.get("cantidad")
     if type(cantidad) is not int or not 1 <= cantidad <= 10:
