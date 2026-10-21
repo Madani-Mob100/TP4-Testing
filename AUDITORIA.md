@@ -132,27 +132,27 @@ sobreviviente de `mutar.py` · **demo** = ejecución manual.
 
 | Id | Línea | Categoría | Regla | Falla | Cómo la encontré | Severidad |
 |---|---|---|---|---|---|---|
-| P1 | 107 | Seguridad | R10 | Inyección SQL: el email se interpola con un f-string. `pedidos_de(con, "' OR '1'='1")` devuelve los pedidos de **todos** los clientes. | lectura · `test_un_email_con_sql_no_altera_la_consulta` | Alta |
-| P2 | 39–50 | Efectos laterales | R10 | Inserta el pedido y hace `commit` **antes** de llamar a `calcular_total`. Si checkout lanza error, queda un pedido huérfano con montos en 0. | lectura · `test_si_checkout_falla_no_queda_ni_el_pedido_ni_sus_items` (4 casos) | Alta |
-| P3 | 52–71 | Manejo de errores (transacción) | R10 | Falta el `commit` final: el UPDATE de montos y los ítems solo existen en la conexión que guardó. Otra conexión ve el pedido con total 0 y sin ítems, y al cerrar la conexión se pierden. | test · `test_otra_conexion_ve_el_pedido_completo_con_todos_sus_items`, `test_el_pedido_sigue_completo_despues_de_cerrar_la_conexion_que_lo_guardo` | Alta |
-| P4 | 12–15, 23, 55–58, 68, 88–97 | Numéricos | R10 | Montos en columnas `REAL` con `float()` y reconstruidos con `Decimal(float)`: `1799.93` vuelve como `1799.930000000000063664629124…`. | lectura · `test_el_pedido_guardado_tiene_los_montos_exactos_de_la_especificacion` | Alta |
-| P5 | 64 | Seguridad | R10 | `precio_unitario` toma el `precio` que manda el cliente. | lectura · `test_el_precio_unitario_es_el_del_catalogo_y_no_el_que_manda_el_cliente` | Alta |
-| P6 | 107 | Strings | R10 | Un email legítimo con apóstrofe (`o'brien@mail.com`) rompe la consulta con `sqlite3.OperationalError`. | test · `test_un_email_con_apostrofe_se_busca_como_cualquier_otro` | Media |
+| P1 | 107 | Seguridad | R10 | Inyección SQL: el email se interpola con un f-string. `pedidos_de(con, "' OR '1'='1")` devuelve los pedidos de **todos** los clientes. | lectura · `test_un_email_con_sql_no_altera_la_consulta_de_pedidos_de` | Alta |
+| P2 | 39–50 | Efectos laterales | R10 | Inserta el pedido y hace `commit` **antes** de llamar a `calcular_total`. Si checkout lanza error, queda un pedido huérfano con montos en 0. | lectura · `test_si_checkout_falla_el_error_se_propaga_y_no_queda_nada_guardado` | Alta |
+| P3 | 52–71 | Manejo de errores (transacción) | R10 | Falta el `commit` final: el UPDATE de montos y los ítems solo existen en la conexión que guardó. Otra conexión ve el pedido con total 0 y sin ítems, y al cerrar la conexión se pierden. | test · `test_otra_conexion_ve_el_pedido_completo_con_todos_sus_items` | Alta |
+| P4 | 12–15, 23, 55–58, 68, 88–97 | Numéricos | R10 | Montos en columnas `REAL` con `float()` y reconstruidos con `Decimal(float)`: `1799.93` vuelve como `1799.930000000000063664629124…`. | lectura · `test_los_montos_guardados_son_decimal_e_identicos_a_los_de_calcular_total` | Alta |
+| P5 | 64 | Seguridad | R10 | `precio_unitario` toma el `precio` que manda el cliente. | lectura | Alta |
+| P6 | 107 | Strings | R10 | Un email legítimo con apóstrofe (`o'brien@mail.com`) rompe la consulta con `sqlite3.OperationalError`. | lectura · demo (`pedidos_de(con, "o'brien@mail.com")`) | Media |
 | P7 | 64 | Code smell | — | Duplica la lógica de precio de `checkout` (la consulta al catálogo) en vez de usar lo que ya calculó `calcular_total`. | lectura | Baja |
 
 #### `api.py`
 
 | Id | Línea | Categoría | Regla | Falla | Cómo la encontré | Severidad |
 |---|---|---|---|---|---|---|
-| A1 | 41 | Tipos | R11, R6 | La `fecha` llega como texto (`"2026-11-30"`) y se pasa sin convertir a `date`. Con `EGRESADOS2026` la comparación `str > date` lanza `TypeError` → 500. **Es la falla del paso de información entre `api.py` y `pedidos.py`/`checkout.py`.** | test · `test_crear_un_pedido_devuelve_201_con_los_montos_como_texto`, `test_un_error_de_negocio_devuelve_422_con_el_codigo_de_checkout[cupon_vencido]` | Alta |
-| A2 | 53–54 | Manejo de errores | R11 | `except Exception` responde **500** a todo: los `CheckoutError` (deberían ser 422), el JSON inválido y los datos incompletos (400). "Un error nunca puede devolver 500." | test · `test_un_error_de_negocio_devuelve_422_con_el_codigo_de_checkout` (8 casos), `test_un_cuerpo_que_no_es_json_devuelve_400`, `test_si_falta_un_dato_obligatorio_devuelve_400` | Alta |
-| A3 | 18 | Numéricos / tipos | R11 | `json.dumps(..., default=float)` manda los montos como número JSON (`0.0`, `24999.9`) en vez de texto (`"24999.90"`). | test · `test_crear_un_pedido_sin_cupon_ni_fecha_devuelve_el_ejemplo_de_la_especificacion` | Alta |
-| A4 | 34–44 | Manejo de errores (transacción) | R10, R11 | Consecuencia de P3 en la API: `con.close()` sin `commit` hace rollback. El POST responde bien, pero un GET posterior muestra el pedido con total 0 y sin ítems. | test · `test_un_pedido_sin_cupon_queda_guardado_y_se_consulta_con_sus_items` | Alta |
-| A5 | 41 | Manejo de errores | R11 | No valida el formato de la fecha: `"30/11/2026"`, `"2026-13-01"` o `20261130` responden **201** en vez de 400 `FECHA_INVALIDA`. | test · `test_una_fecha_que_no_es_aaaa_mm_dd_devuelve_400` (7 casos) | Media |
-| A6 | 37–39 | Tipos | R11 | No valida presencia ni tipo de `email`, `zona` y `carrito` (ni que el cuerpo sea un objeto): `KeyError`/`AttributeError` → 500. | test · `test_si_un_dato_obligatorio_tiene_otro_tipo_devuelve_400`, `test_un_json_que_no_es_un_objeto_devuelve_400` | Media |
+| A1 | 41 | Tipos | R11, R6 | La `fecha` llega como texto (`"2026-11-30"`) y se pasa sin convertir a `date`. Con `EGRESADOS2026` la comparación `str > date` lanza `TypeError` → 500. **Es la falla del paso de información entre `api.py` y `pedidos.py`/`checkout.py`.** | lectura · demo (POST con `cupon: "EGRESADOS2026"` y `fecha: "2026-12-01"` → 500) | Alta |
+| A2 | 53–54 | Manejo de errores | R11 | `except Exception` responde **500** a todo: los `CheckoutError` (deberían ser 422), el JSON inválido y los datos incompletos (400). "Un error nunca puede devolver 500." | test · `test_un_error_de_negocio_devuelve_422_con_el_codigo_de_checkout`, `test_si_falta_el_email_devuelve_400_datos_incompletos` | Alta |
+| A3 | 18 | Numéricos / tipos | R11 | `json.dumps(..., default=float)` manda los montos como número JSON (`0.0`, `24999.9`) en vez de texto (`"24999.90"`). | test · `test_crear_un_pedido_devuelve_201_con_los_montos_como_texto` | Alta |
+| A4 | 34–44 | Manejo de errores (transacción) | R10, R11 | Consecuencia de P3 en la API: `con.close()` sin `commit` hace rollback. El POST responde bien, pero un GET posterior muestra el pedido con total 0 y sin ítems. | test · `test_un_pedido_creado_se_consulta_completo_con_sus_items` | Alta |
+| A5 | 41 | Manejo de errores | R11 | No valida el formato de la fecha: `"30/11/2026"`, `"2026-13-01"` o `20261130` responden **201** en vez de 400 `FECHA_INVALIDA`. | test · `test_una_fecha_que_no_es_aaaa_mm_dd_devuelve_400` | Media |
+| A6 | 37–39 | Tipos | R11 | No valida presencia ni tipo de `email`, `zona` y `carrito` (ni que el cuerpo sea un objeto): `KeyError`/`AttributeError` → 500. | test · `test_si_falta_el_email_devuelve_400_datos_incompletos` | Media |
 | A7 | 64–66 | Lógica y límites | R11 | Un pedido inexistente responde `200 null` en vez de 404 `PEDIDO_INEXISTENTE`. | test · `test_un_pedido_inexistente_devuelve_404` | Media |
-| A8 | 54, 68 | Manejo de errores | R11 | El formato de error es `{"error": "<texto>"}` en vez de `{"error": {"code", "message"}}`; el frontend no puede leer el `code`. | test · `test_un_error_tiene_el_formato_de_la_especificacion` | Media |
-| A9 | 54, 68 | Seguridad | — | `str(e)` expone mensajes internos de Python (`"'>' not supported between instances of 'str' and 'datetime.date'"`) al cliente. | test (cuerpo de los 500) | Baja |
+| A8 | 54, 68 | Manejo de errores | R11 | El formato de error es `{"error": "<texto>"}` en vez de `{"error": {"code", "message"}}`; el frontend no puede leer el `code`. | test · `test_un_error_de_negocio_devuelve_422_con_el_codigo_de_checkout` (el cuerpo del error es un texto) | Media |
+| A9 | 54, 68 | Seguridad | — | `str(e)` expone mensajes internos de Python (`"'>' not supported between instances of 'str' and 'datetime.date'"`) al cliente. | demo (cuerpo de los 500) | Baja |
 | A10 | 34–44, 63–65 | Code smell | — | La conexión no se cierra si hay una excepción (falta `try/finally`). | lectura | Baja |
 
 ### 2.3 Tabla de fallas, de la más grave a la menos grave
@@ -212,10 +212,20 @@ mensajes que no cambian el importe, y problemas de mantenibilidad.
 | Suite | Tests | Pasan | Fallan |
 |---|---:|---:|---:|
 | `test_checkout.py` (contra mi `checkout.py` corregido) | 122 | 122 | 0 |
-| `test_integracion.py` (contra `pedidos.py` sin corregir) | 22 | 9 | 13 |
-| `test_e2e.py` (contra `api.py` sin corregir) | 38 | 5 | 33 |
+| `test_integracion.py` (contra `pedidos.py` sin corregir) | 5 | 1 | 4 |
+| `test_e2e.py` (contra `api.py` sin corregir) | 7 | 1 | 6 |
 
 Para asegurar que ninguna falla de integración o E2E se debe a un test mal
 escrito, corrí ambas suites contra una implementación de `pedidos.py` y
-`api.py` escrita a partir de la especificación (fuera del repositorio): las
-60 pasan, y siguieron pasando en 8 corridas seguidas.
+`api.py` escrita a partir de la especificación (fuera del repositorio): los
+12 pasan, y siguieron pasando en 5 corridas seguidas.
+
+Alcance (según la aclaración de la consigna): en integración hay un test para
+cada uno de 4 puntos de R10 (atomicidad ante `CheckoutError`, pedido
+definitivo visto desde otra conexión, montos `Decimal` idénticos a
+`calcular_total` y `pedidos_de` sin inyección SQL), además del ejemplo de la
+plantilla (`obtener_pedido` de un id inexistente). En E2E hay un test por
+endpoint (POST 201 y GET 200) y uno para cada uno de 4 errores de R11 (422,
+`DATOS_INCOMPLETOS`, `FECHA_INVALIDA` y `PEDIDO_INEXISTENTE`), además del
+ejemplo de la plantilla (`RUTA_INEXISTENTE`). Las fallas que quedaron fuera de
+esos tests (P5, P6, A1, A9) se encontraron por lectura o ejecución manual.
