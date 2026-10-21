@@ -45,6 +45,9 @@ def _normalizar(texto):
 
 
 def validar_item(item):
+    if not isinstance(item, dict):
+        raise CheckoutError("PRODUCTO_INEXISTENTE", f"Ítem inválido: {item!r}")
+
     producto = item.get("producto")
     if not isinstance(producto, str) or producto not in CATALOGO:
         raise CheckoutError("PRODUCTO_INEXISTENTE", f"Producto inexistente: {producto!r}")
