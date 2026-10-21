@@ -63,3 +63,19 @@ def test_calcular_total_no_modifica_el_carrito_que_recibe():
     calcular_total(carrito, "CABA", None, HOY_VIGENTE)
 
     assert carrito == copia
+
+
+@pytest.mark.parametrize("talle", ["XS", "S", "M", "L", "XL", "XXL", "m", "xL", "  M ", "\tXXL\n"])
+def test_un_talle_valido_se_acepta_sin_importar_mayusculas_ni_espacios(talle):
+    assert resultado_de_validar(item(talle=talle)) == "VALIDO"
+
+
+@pytest.mark.parametrize("talle", ["XXXL", "XXS", "M L", "MEDIANO", "", "   ", None, 5])
+def test_un_talle_que_no_es_de_la_lista_es_invalido(talle):
+    assert resultado_de_validar(item(talle=talle)) == "TALLE_INVALIDO"
+
+
+def test_un_item_sin_talle_es_invalido():
+    sin_talle = {"producto": "buzo", "cantidad": 1}
+
+    assert resultado_de_validar(sin_talle) == "TALLE_INVALIDO"
